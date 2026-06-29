@@ -5,6 +5,13 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def get_default_database_url() -> str:
+    """Use a writable location for SQLite in serverless environments."""
+    if os.getenv("VERCEL"):
+        return "sqlite:////tmp/market.db"
+    return f"sqlite:///{BASE_DIR / 'market.db'}"
+
+
 class Settings:
     # Server
     PORT: int = int(os.getenv("PORT", "8080"))
@@ -12,10 +19,7 @@ class Settings:
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
 
     # Database
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        f"sqlite:///{BASE_DIR / 'market.db'}"
-    )
+    DATABASE_URL: str = os.getenv("DATABASE_URL", get_default_database_url())
 
     # Auth
     JWT_SECRET: str = os.getenv(
