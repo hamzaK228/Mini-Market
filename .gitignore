@@ -9,3 +9,4 @@ venv/
 instance/
 .pytest_cache/
 .mypy_cache/
+*.bak

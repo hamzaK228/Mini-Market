@@ -1,25 +1,36 @@
-"""FastAPI application entry point for Mini-Markets CRM."""
+"""FastAPI application entry point for Mini-Markets CRM.
+
+Works both locally (uvicorn) and on Vercel (serverless).
+On Vercel, startup events don't fire reliably, so init_db() is called lazily.
+"""
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from jinja2 import Environment, FileSystemLoader
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
 from app.database import init_db
 from app.routers import auth, markets, products, orders, reconciliations
 
-# --- Jinja2 Templates (direct Environment to avoid Python 3.14 cache issue) ---
+# --- Lazy init (works on serverless cold starts) ---
+_init_done = False
 
+
+def _ensure_init():
+    global _init_done
+    if not _init_done:
+        init_db()
+        _init_done = True
+
+
+# --- Jinja2 Templates ---
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 _jinja_env = Environment(
     loader=FileSystemLoader(str(TEMPLATES_DIR)),
     auto_reload=settings.DEBUG,
-    cache_size=0,  # Disable cache for compatibility
+    cache_size=0,
 )
 
 
@@ -31,19 +42,13 @@ def render_template(name: str, **context) -> str:
 
 # --- FastAPI App ---
 
-limiter = Limiter(key_func=get_remote_address)
-
 app = FastAPI(
     title="Mini-Markets CRM API",
     description="Multi-tenant CRM for small retail chains in Kyrgyzstan",
     version="1.0.0",
 )
 
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
 # --- CORS ---
-
 from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
@@ -53,14 +58,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# --- Lifecycle ---
-
-
-@app.on_event("startup")
-def on_startup():
-    init_db()
 
 
 # --- Routers ---
@@ -83,19 +80,22 @@ if STATIC_DIR.exists():
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
-def dashboard(request: Request):
-    html = render_template("dashboard.html", request=request)
+def dashboard():
+    _ensure_init()
+    html = render_template("dashboard.html")
     return HTMLResponse(html)
 
 
 @app.get("/", response_class=HTMLResponse)
-def login_page(request: Request):
-    html = render_template("login.html", request=request)
+def login_page():
+    _ensure_init()
+    html = render_template("login.html")
     return HTMLResponse(html)
 
 
 @app.get("/health")
 def health():
+    _ensure_init()
     return {
         "status": "ok",
         "version": "1.0.0",
@@ -112,13 +112,13 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     response.headers["Cache-Control"] = "no-store"
     return response
 
 
-# --- Entry point ---
+# --- Entry point (local) ---
 
 if __name__ == "__main__":
+    _ensure_init()
     import uvicorn
     uvicorn.run("app.main:app", host=settings.HOST, port=settings.PORT, reload=settings.DEBUG)

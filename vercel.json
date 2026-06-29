@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.12",
+      "maxDuration": 30,
+      "memory": 256
+    }
+  },
+  "routes": [
+    { "src": "/static/(.*)", "dest": "/static/$1" },
+    { "src": "/favicon.ico", "dest": "/api/index.py" },
+    { "src": "/(.*)", "dest": "/api/index.py" }
+  ]
+}
