@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Войти — Mini-Markets CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { gold: { DEFAULT: '#d79e43', 400: '#e1b772' }, darkBg: '#09090b', darkCard: '#18181b', darkBorder: '#27272a' } } }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #09090b; }
+    h1,h2,h3 { font-family: 'Montserrat', sans-serif; }
+    .glow { box-shadow: 0 0 60px -10px rgba(215,158,67,0.15); }
+    input:focus { outline: none; border-color: #d79e43; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    .fade-up { animation: fadeUp .5s cubic-bezier(.4,0,.2,1) forwards; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+
+  <!-- Ambient glow bg -->
+  <div class="absolute inset-0 pointer-events-none">
+    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gold/5 rounded-full blur-3xl"></div>
+  </div>
+
+  <div class="w-full max-w-md fade-up">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gold/10 border border-gold/30 mb-4">
+        <i class="fa-solid fa-crown text-gold text-2xl"></i>
+      </div>
+      <h1 class="text-2xl font-black text-white tracking-wide">Mini-Markets CRM</h1>
+      <p class="text-zinc-500 text-sm mt-1">Управление сетью магазинов. Бишкек, Кыргызстан.</p>
+    </div>
+
+    <!-- Card -->
+    <div class="bg-darkCard border border-darkBorder rounded-2xl p-8 glow">
+
+      <!-- Tab Toggle -->
+      <div class="bg-zinc-950 border border-darkBorder p-1 rounded-xl flex gap-1 mb-6">
+        <button id="btn-login-tab" onclick="setTab('login')" class="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all bg-gold text-darkBg">
+          Войти
+        </button>
+        <button id="btn-register-tab" onclick="setTab('register')" class="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all text-zinc-400 hover:text-white">
+          Регистрация
+        </button>
+      </div>
+
+      <!-- Error banner -->
+      <div id="error-banner" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span id="error-text"></span>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Email</label>
+          <input id="login-email" type="email" required placeholder="your@email.com"
+            class="w-full bg-zinc-950 border border-darkBorder rounded-xl px-4 py-3 text-zinc-200 text-sm transition-colors">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Пароль</label>
+          <div class="relative">
+            <input id="login-password" type="password" required placeholder="••••••••"
+              class="w-full bg-zinc-950 border border-darkBorder rounded-xl px-4 py-3 text-zinc-200 text-sm transition-colors pr-10">
+            <button type="button" onclick="togglePwd('login-password')" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300">
+              <i class="fa-solid fa-eye text-sm"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" id="login-btn" class="w-full bg-gold hover:bg-gold-400 text-darkBg font-black py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 mt-2">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span>Войти в систему</span>
+        </button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="register-form" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Ваше имя</label>
+          <input id="reg-name" type="text" required placeholder="Владелец / Менеджер"
+            class="w-full bg-zinc-950 border border-darkBorder rounded-xl px-4 py-3 text-zinc-200 text-sm transition-colors">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Email</label>
+          <input id="reg-email" type="email" required placeholder="your@email.com"
+            class="w-full bg-zinc-950 border border-darkBorder rounded-xl px-4 py-3 text-zinc-200 text-sm transition-colors">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Пароль</label>
+          <div class="relative">
+            <input id="reg-password" type="password" required placeholder="Минимум 4 символа"
+              class="w-full bg-zinc-950 border border-darkBorder rounded-xl px-4 py-3 text-zinc-200 text-sm transition-colors pr-10">
+            <button type="button" onclick="togglePwd('reg-password')" class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300">
+              <i class="fa-solid fa-eye text-sm"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" id="reg-btn" class="w-full bg-gold hover:bg-gold-400 text-darkBg font-black py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 mt-2">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>Создать аккаунт</span>
+        </button>
+      </form>
+    </div>
+
+    <p class="text-center text-zinc-600 text-xs mt-6">
+      Mini-Markets CRM &copy; 2026 — Bishkek, Kyrgyzstan
+    </p>
+  </div>
+
+  <script>
+    // Redirect if already logged in
+    if (localStorage.getItem('crm_token')) {
+      window.location.href = '/dashboard';
+    }
+
+    let activeTab = 'login';
+
+    function setTab(tab) {
+      activeTab = tab;
+      hideError();
+      document.getElementById('login-form').classList.toggle('hidden', tab !== 'login');
+      document.getElementById('register-form').classList.toggle('hidden', tab !== 'register');
+      const loginBtn = document.getElementById('btn-login-tab');
+      const regBtn = document.getElementById('btn-register-tab');
+      if (tab === 'login') {
+        loginBtn.className = 'flex-1 py-2.5 rounded-lg text-sm font-bold transition-all bg-gold text-darkBg';
+        regBtn.className = 'flex-1 py-2.5 rounded-lg text-sm font-bold transition-all text-zinc-400 hover:text-white';
+      } else {
+        regBtn.className = 'flex-1 py-2.5 rounded-lg text-sm font-bold transition-all bg-gold text-darkBg';
+        loginBtn.className = 'flex-1 py-2.5 rounded-lg text-sm font-bold transition-all text-zinc-400 hover:text-white';
+      }
+    }
+
+    function showError(msg) {
+      document.getElementById('error-text').innerText = msg;
+      document.getElementById('error-banner').classList.remove('hidden');
+    }
+    function hideError() {
+      document.getElementById('error-banner').classList.add('hidden');
+    }
+
+    function togglePwd(id) {
+      const inp = document.getElementById(id);
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+    }
+
+    function setLoading(btnId, loading) {
+      const btn = document.getElementById(btnId);
+      btn.disabled = loading;
+      btn.style.opacity = loading ? '0.7' : '1';
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      hideError();
+      setLoading('login-btn', true);
+      try {
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('login-email').value,
+            password: document.getElementById('login-password').value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || data.detail) {
+          showError(data.detail || 'Ошибка входа');
+        } else {
+          localStorage.setItem('crm_token', data.access_token);
+          localStorage.setItem('crm_refresh_token', data.refresh_token);
+          localStorage.setItem('crm_owner', JSON.stringify(data.owner));
+          window.location.href = '/dashboard';
+        }
+      } catch(err) {
+        showError('Не удалось подключиться к серверу');
+      } finally {
+        setLoading('login-btn', false);
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      hideError();
+      setLoading('reg-btn', true);
+      try {
+        const res = await fetch('/api/v1/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: document.getElementById('reg-name').value,
+            email: document.getElementById('reg-email').value,
+            password: document.getElementById('reg-password').value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || data.detail) {
+          showError(data.detail || 'Ошибка регистрации');
+        } else {
+          localStorage.setItem('crm_token', data.access_token);
+          localStorage.setItem('crm_refresh_token', data.refresh_token);
+          localStorage.setItem('crm_owner', JSON.stringify(data.owner));
+          window.location.href = '/dashboard';
+        }
+      } catch(err) {
+        showError('Не удалось подключиться к серверу');
+      } finally {
+        setLoading('reg-btn', false);
+      }
+    }
+  </script>
+</body>
+</html>

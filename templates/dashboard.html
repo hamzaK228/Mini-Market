@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Панель управления — Mini-Markets CRM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { gold: { DEFAULT: '#d79e43', 400: '#e1b772' }, darkBg: '#09090b', darkCard: '#18181b', darkBorder: '#27272a' } } }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #09090b; color: #f4f4f5; }
+    h1,h2,h3 { font-family: 'Montserrat', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #09090b; }
+    ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #d79e43; }
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+    .premium-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .premium-card:hover { border-color: rgba(215, 158, 67, 0.3); box-shadow: 0 4px 20px -2px rgba(215, 158, 67, 0.08); transform: translateY(-2px); }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .view-container { animation: fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+  </style>
+</head>
+<body class="min-h-screen flex overflow-hidden">
+
+  <!-- Mobile Sidebar Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 hidden lg:hidden" onclick="toggleMobileSidebar()"></div>
+
+  <!-- Sidebar Component -->
+  <aside id="app-sidebar" class="fixed inset-y-0 left-0 w-64 bg-darkCard border-r border-darkBorder flex flex-col z-40 transform -translate-x-full lg:translate-x-0 lg:static transition-transform duration-300 ease-in-out">
+    <!-- Sidebar Header -->
+    <div class="h-16 flex items-center justify-between px-6 border-b border-darkBorder">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gold flex items-center justify-center text-darkBg font-black text-lg">
+          <i class="fa-solid fa-crown text-sm"></i>
+        </div>
+        <span class="text-lg font-bold tracking-wide bg-gradient-to-r from-white to-gold-400 bg-clip-text text-transparent">MINI-MARKET</span>
+      </div>
+      <button class="lg:hidden text-zinc-400 hover:text-white" onclick="toggleMobileSidebar()">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Navigation links -->
+    <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+      <button id="nav-dashboard" onclick="switchTab('dashboard')" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-lg text-left text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/40 transition-colors">
+        <i class="fa-solid fa-chart-pie w-5 text-center text-base"></i>
+        <span>Обзор</span>
+      </button>
+      <button id="nav-reconciliation" onclick="switchTab('reconciliation')" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-lg text-left text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/40 transition-colors">
+        <i class="fa-solid fa-calculator w-5 text-center text-base"></i>
+        <span>Сверка кассы</span>
+      </button>
+      <button id="nav-orders" onclick="switchTab('orders')" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-lg text-left text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/40 transition-colors">
+        <i class="fa-solid fa-truck-ramp-box w-5 text-center text-base"></i>
+        <span>Заявки поставщиков</span>
+      </button>
+      <button id="nav-products" onclick="switchTab('products')" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-lg text-left text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/40 transition-colors">
+        <i class="fa-solid fa-boxes-stacked w-5 text-center text-base"></i>
+        <span>Товары</span>
+      </button>
+      <button id="nav-markets" onclick="switchTab('markets')" class="w-full flex items-center gap-3.5 px-4 py-3 rounded-lg text-left text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/40 transition-colors">
+        <i class="fa-solid fa-store w-5 text-center text-base"></i>
+        <span>Маркеты</span>
+      </button>
+    </nav>
+
+    <!-- Sidebar Footer (Owner space details & logout) -->
+    <div class="p-4 border-t border-darkBorder space-y-2">
+      <div class="bg-zinc-950 border border-darkBorder rounded-lg p-3 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center text-gold">
+          <i class="fa-solid fa-user-tie"></i>
+        </div>
+        <div class="overflow-hidden flex-1">
+          <p id="owner-name" class="text-xs font-semibold truncate">Владелец</p>
+          <p id="owner-email" class="text-[10px] text-zinc-500 truncate">email@example.com</p>
+        </div>
+      </div>
+      <button onclick="handleLogout()" class="w-full bg-zinc-800/60 hover:bg-red-500/10 hover:text-red-400 border border-darkBorder text-zinc-400 text-xs font-semibold py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span>Выйти из аккаунта</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main View Area -->
+  <div class="flex-1 flex flex-col min-w-0 relative">
+    
+    <!-- Top Header -->
+    <header class="h-16 border-b border-darkBorder bg-darkCard px-4 sm:px-6 flex items-center justify-between z-20 shrink-0">
+      <div class="flex items-center gap-4">
+        <button class="lg:hidden text-zinc-400 hover:text-white focus:outline-none" onclick="toggleMobileSidebar()">
+          <i class="fa-solid fa-bars text-xl"></i>
+        </button>
+        <h2 id="header-page-title" class="text-lg font-bold text-white tracking-wide uppercase hidden sm:block">Обзор</h2>
+      </div>
+
+      <!-- Active Market Selector and Order trigger -->
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <select id="market-select" onchange="changeActiveMarket(this.value)" class="bg-zinc-950 border border-darkBorder text-sm font-medium text-zinc-200 rounded-lg px-3.5 py-1.5 pr-8 focus:outline-none focus:border-gold appearance-none cursor-pointer">
+            <!-- Dynamically filled -->
+          </select>
+          <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs pointer-events-none"></i>
+        </div>
+
+        <button onclick="openNewOrderModal()" class="bg-gold hover:bg-gold-400 text-darkBg text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span>Создать заявку</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 overflow-y-auto p-4 sm:p-6 bg-darkBg">
+      
+      <!-- ==================== VIEW 1: DASHBOARD ==================== -->
+      <div id="view-dashboard" class="view-container space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-darkCard to-zinc-900 border border-darkBorder p-6 rounded-2xl relative overflow-hidden">
+          <div class="absolute right-0 top-0 w-64 h-64 bg-gold/5 blur-3xl rounded-full -mr-20 -mt-20 pointer-events-none"></div>
+          <div>
+            <div class="flex items-center gap-2 text-gold text-xs font-bold uppercase tracking-wider mb-1">
+              <i class="fa-solid fa-location-dot"></i>
+              <span id="dash-market-badge">Загрузка...</span>
+            </div>
+            <h1 id="dash-market-name" class="text-2xl font-extrabold text-white">Сеть магазинов</h1>
+            <p id="dash-market-address" class="text-zinc-400 text-sm mt-1">Адрес</p>
+          </div>
+          <button onclick="switchTab('reconciliation')" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-darkBorder text-sm font-medium px-4.5 py-2.5 rounded-xl flex items-center gap-2 transition-all">
+            <i class="fa-solid fa-calculator text-gold"></i>
+            <span>Сверить кассу сегодня</span>
+          </button>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-darkCard border border-darkBorder rounded-2xl p-5 flex items-center gap-4 premium-card">
+            <div class="w-12 h-12 rounded-xl bg-gold/10 flex items-center justify-center text-gold text-xl shrink-0">
+              <i class="fa-solid fa-cart-shopping"></i>
+            </div>
+            <div>
+              <p class="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Товаров продано</p>
+              <h3 id="dash-sold-count" class="text-2xl font-black text-white mt-1">0 шт</h3>
+            </div>
+          </div>
+
+          <div class="bg-darkCard border border-darkBorder rounded-2xl p-5 flex items-center gap-4 premium-card">
+            <div class="w-12 h-12 rounded-xl bg-gold/10 flex items-center justify-center text-gold text-xl shrink-0">
+              <i class="fa-solid fa-coins"></i>
+            </div>
+            <div>
+              <p class="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Ожидаемая выручка</p>
+              <h3 id="dash-expected-revenue" class="text-2xl font-black text-white mt-1">0 сом</h3>
+            </div>
+          </div>
+
+          <div class="bg-darkCard border border-darkBorder rounded-2xl p-5 flex items-center gap-4 premium-card">
+            <div id="dash-status-icon-container" class="w-12 h-12 rounded-xl bg-zinc-800 flex items-center justify-center text-zinc-400 text-xl shrink-0">
+              <i class="fa-solid fa-circle-question"></i>
+            </div>
+            <div>
+              <p class="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Статус сверки</p>
+              <h3 id="dash-reconciliation-status" class="text-base font-bold text-zinc-400 mt-1">Нет сверки</h3>
+            </div>
+          </div>
+
+          <div class="bg-darkCard border border-darkBorder rounded-2xl p-5 flex items-center gap-4 premium-card">
+            <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 text-xl shrink-0">
+              <i class="fa-solid fa-bell"></i>
+            </div>
+            <div>
+              <p class="text-zinc-500 text-xs font-semibold uppercase tracking-wider">Заявки в ожидании</p>
+              <h3 id="dash-pending-orders" class="text-2xl font-black text-amber-500 mt-1">0</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- All Markets Grid -->
+        <div class="space-y-4">
+          <h2 class="text-lg font-bold text-white flex items-center gap-2 uppercase tracking-wide">
+            <i class="fa-solid fa-network-wired text-gold text-sm"></i>
+            <span>Сравнение маркетов</span>
+          </h2>
+          <div id="dash-comparison-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Filled dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== VIEW 2: RECONCILIATION ==================== -->
+      <div id="view-reconciliation" class="view-container space-y-6 hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-darkCard border border-darkBorder p-4 rounded-xl">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-calendar-day text-gold text-lg"></i>
+            <span class="text-sm font-semibold text-zinc-300">Дата сверки:</span>
+            <input type="date" id="recon-date-picker" onchange="loadReconciliationDate(this.value)" class="bg-zinc-950 border border-darkBorder text-zinc-200 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:border-gold">
+          </div>
+          
+          <div class="flex items-center gap-3">
+            <span id="recon-status-badge" class="hidden"></span>
+            <button onclick="openKkmModal()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60 text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+              <i class="fa-solid fa-cloud-arrow-down text-gold"></i>
+              <span>ККМ и Импорт</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Reconciliation Table Card -->
+        <div class="bg-darkCard border border-darkBorder rounded-2xl overflow-hidden shadow-2xl">
+          <div class="p-5 border-b border-darkBorder flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-zinc-900/50">
+            <div>
+              <h3 class="font-extrabold text-white">Список товаров для сверки</h3>
+              <p class="text-xs text-zinc-500 mt-1">Сравните фактические продажи с показаниями кассового аппарата.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="quickFillReconciliation('zero')" class="text-xs bg-zinc-850 hover:bg-zinc-800 text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg border border-darkBorder font-medium transition-all">Обнулить факт</button>
+              <button onclick="quickFillReconciliation('copy')" class="text-xs bg-zinc-850 hover:bg-zinc-800 text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg border border-darkBorder font-medium transition-all font-bold text-gold">Скопировать факт в кассу</button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-darkBorder bg-zinc-950/40 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
+                  <th class="px-6 py-4">Название товара</th>
+                  <th class="px-6 py-4">Категория</th>
+                  <th class="px-6 py-4 text-right">Цена</th>
+                  <th class="px-6 py-4 text-center">Факт продажи (шт)</th>
+                  <th class="px-6 py-4 text-center">По кассе (шт)</th>
+                  <th class="px-6 py-4 text-right">Расхождение</th>
+                  <th class="px-6 py-4 text-right">Ожидаемая сумма</th>
+                  <th class="px-6 py-4 text-right">Сумма по кассе</th>
+                </tr>
+              </thead>
+              <tbody id="recon-table-body" class="divide-y divide-darkBorder text-sm">
+                <!-- Dynamic rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Bottom Totals Summary -->
+          <div class="p-6 border-t border-darkBorder bg-zinc-950/40 grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div class="bg-zinc-950 p-4 border border-darkBorder rounded-xl">
+              <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider block">Итого Ожидаемая сумма</span>
+              <span id="recon-total-expected" class="text-xl font-black text-white mt-1 block">0 сом</span>
+            </div>
+            <div class="bg-zinc-950 p-4 border border-darkBorder rounded-xl">
+              <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider block">Итого Сумма по кассе</span>
+              <span id="recon-total-register" class="text-xl font-black text-white mt-1 block">0 сом</span>
+            </div>
+            <div class="bg-zinc-950 p-4 border border-darkBorder rounded-xl flex items-center justify-between">
+              <div>
+                <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider block">Разница (Недостача / Излишек)</span>
+                <span id="recon-total-diff" class="text-xl font-black text-white mt-1 block">0 сом</span>
+              </div>
+              <button onclick="saveCurrentReconciliation()" class="bg-gold hover:bg-gold-400 text-darkBg font-extrabold px-6 py-3 rounded-xl transition-all shadow-lg shadow-gold/10">
+                Сохранить сверку
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- History of reconciliations -->
+        <div class="bg-darkCard border border-darkBorder rounded-2xl p-6">
+          <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2 uppercase tracking-wide">
+            <i class="fa-solid fa-clock-rotate-left text-gold text-sm"></i>
+            <span>История сверок за последние 30 дней</span>
+          </h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left">
+              <thead>
+                <tr class="border-b border-darkBorder text-xs text-zinc-500 font-bold uppercase pb-3">
+                  <th class="pb-3 font-semibold">Дата сверки</th>
+                  <th class="pb-3 text-right font-semibold">Ожидаемая сумма</th>
+                  <th class="pb-3 text-right font-semibold">Сумма по кассе</th>
+                  <th class="pb-3 text-right font-semibold">Разница</th>
+                  <th class="pb-3 text-center font-semibold">Статус</th>
+                  <th class="pb-3 text-right font-semibold">Дата создания</th>
+                </tr>
+              </thead>
+              <tbody id="recon-history-body" class="divide-y divide-darkBorder text-sm text-zinc-300">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== VIEW 3: ORDERS ==================== -->
+      <div id="view-orders" class="view-container space-y-6 hidden">
+        <!-- Status Tabs -->
+        <div class="flex border-b border-darkBorder gap-6 text-sm font-semibold">
+          <button onclick="switchOrderTab('all')" id="order-tab-all" class="pb-3 border-b-2 border-gold text-gold">Все заявки</button>
+          <button onclick="switchOrderTab('pending')" id="order-tab-pending" class="pb-3 border-b-2 border-transparent text-zinc-400 hover:text-white">В ожидании</button>
+          <button onclick="switchOrderTab('accepted')" id="order-tab-accepted" class="pb-3 border-b-2 border-transparent text-zinc-400 hover:text-white">Принято</button>
+          <button onclick="switchOrderTab('rejected')" id="order-tab-rejected" class="pb-3 border-b-2 border-transparent text-zinc-400 hover:text-white">Отклонено</button>
+        </div>
+
+        <div id="orders-list" class="space-y-4">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- ==================== VIEW 4: PRODUCTS ==================== -->
+      <div id="view-products" class="view-container space-y-6 hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <h1 class="text-xl font-black text-white">Каталог товаров</h1>
+            <button onclick="openAddProductModal()" class="bg-gold hover:bg-gold-400 text-darkBg text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors">
+              <i class="fa-solid fa-plus"></i>
+              <span>Добавить товар</span>
+            </button>
+          </div>
+          <div class="flex flex-wrap gap-3">
+            <select id="prod-filter-category" onchange="filterProducts()" class="bg-zinc-950 border border-darkBorder text-xs font-medium text-zinc-300 rounded-lg px-3 py-2 focus:outline-none">
+              <option value="">Все категории</option>
+            </select>
+            <select id="prod-filter-supplier" onchange="filterProducts()" class="bg-zinc-950 border border-darkBorder text-xs font-medium text-zinc-300 rounded-lg px-3 py-2 focus:outline-none">
+              <option value="">Все поставщики</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="bg-darkCard border border-darkBorder rounded-2xl overflow-hidden">
+          <table class="w-full text-left">
+            <thead>
+              <tr class="border-b border-darkBorder bg-zinc-950/40 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
+                <th class="px-6 py-4">Название товара</th>
+                <th class="px-6 py-4">Категория</th>
+                <th class="px-6 py-4">Поставщик</th>
+                <th class="px-6 py-4 text-right">Закупочная цена</th>
+                <th class="px-6 py-4 text-right">Цена продажи</th>
+                <th class="px-6 py-4 text-center">Действия</th>
+              </tr>
+            </thead>
+            <tbody id="products-table-body" class="divide-y divide-darkBorder text-sm text-zinc-300">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== VIEW 5: MARKETS ==================== -->
+      <div id="view-markets" class="view-container space-y-6 hidden">
+        <div class="flex items-center justify-between">
+          <h1 class="text-xl font-black text-white">Управление маркетами</h1>
+          <button onclick="openAddMarketModal()" class="bg-gold hover:bg-gold-400 text-darkBg text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors">
+            <i class="fa-solid fa-plus"></i>
+            <span>Добавить маркет</span>
+          </button>
+        </div>
+
+        <div id="markets-list-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Markets items populated dynamically -->
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Toast system container -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- Modal Backdrop wrapper -->
+  <div id="modal-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    
+    <!-- Modal 1: Create Order -->
+    <div id="modal-new-order" class="bg-darkCard border border-darkBorder rounded-2xl max-w-2xl w-full overflow-hidden p-6 hidden">
+      <div class="flex justify-between items-center pb-4 border-b border-darkBorder">
+        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Создать заявку поставщику</h3>
+        <button onclick="closeModal()" class="text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="new-order-form" onsubmit="submitNewOrder(event)" class="space-y-4 pt-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Поставщик</label>
+            <input type="text" id="order-supplier" required placeholder="ООО Coca-Cola Bishkek" class="w-full bg-zinc-950 border border-darkBorder rounded-lg px-3 py-2 text-zinc-200 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Контактное лицо</label>
+            <input type="text" id="order-contact" placeholder="Алексей" class="w-full bg-zinc-950 border border-darkBorder rounded-lg px-3 py-2 text-zinc-200 text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Телефон</label>
+          <input type="text" id="order-phone" placeholder="+996 555 123 456" class="w-full bg-zinc-950 border border-darkBorder rounded-lg px-3 py-2 text-zinc-200 text-sm">
+        </div>
+        <div class="border-t border-darkBorder pt-4">
+          <div class="flex justify-between items-center mb-3">
+            <h4 class="text-xs font-bold text-gold uppercase">Товары в заявке</h4>
+            <button type="button" onclick="addOrderItemRow()" class="text-[11px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-darkBorder px-2.5 py-1 rounded flex items-center gap-1 transition-all"><i class="fa-solid fa-plus text-gold"></i> Добавить товар</button>
+          </div>
+          <div id="order-items-rows" class="space-y-2.5 max-h-48 overflow-y-auto pr-1">
+            <!-- Row structure added dynamically -->
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 pt-4 border-t border-darkBorder">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 border border-darkBorder text-zinc-400 text-sm font-semibold rounded-lg hover:text-white transition-colors">Отмена</button>
+          <button type="submit" class="px-5 py-2 bg-gold hover:bg-gold-400 text-darkBg text-sm font-black rounded-lg transition-colors">Отправить заявку</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Modal 2: Edit Order Items -->
+    <div id="modal-edit-order" class="bg-darkCard border border-darkBorder rounded-2xl max-w-lg w-full overflow-hidden p-6 hidden">
+      <div class="flex justify-between items-center pb-4 border-b border-darkBorder">
+        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Редактировать заявку</h3>
+        <button onclick="closeModal()" class="text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="edit-order-form" onsubmit="submitEditOrder(event)" class="space-y-4 pt-4">
+        <input type="hidden" id="edit-order-id">
+        <div id="edit-order-items-container" class="space-y-3 max-h-60 overflow-y-auto">
+          <!-- Loaded dynamically -->
+        </div>
+        <div class="flex justify-end gap-3 pt-4 border-t border-darkBorder">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 border border-darkBorder text-zinc-400 text-sm font-semibold rounded-lg hover:text-white transition-colors">Отмена</button>
+          <button type="submit" class="px-5 py-2 bg-gold hover:bg-gold-400 text-darkBg text-sm font-black rounded-lg transition-colors">Сохранить</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Modal 3: Reject Reason -->
+    <div id="modal-reject-reason" class="bg-darkCard border border-darkBorder rounded-2xl max-w-md w-full overflow-hidden p-6 hidden">
+      <div class="flex justify-between items-center pb-3 border-b border-darkBorder">
+        <h3 class="text-sm font-bold text-red-500 uppercase tracking-wider">Укажите причину отклонения</h3>
+        <button onclick="closeModal()" class="text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark text-base"></i></button>
+      </div>
+      <div class="space-y-4 pt-4">
+        <input type="hidden" id="reject-order-id">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase mb-1.5">Комментарий</label>
+          <textarea id="reject-comment" required placeholder="Например: Нет товара на складе, доставка задерживается" class="w-full bg-zinc-950 border border-darkBorder rounded-lg px-3 py-2 text-zinc-200 text-sm h-24 focus:outline-none focus:border-gold"></textarea>
+        </div>
+        <div class="flex justify-end gap-3">
+          <button onclick="closeModal()" class="px-3.5 py-1.5 border border-darkBorder text-zinc-400 text-xs font-semibold rounded-lg hover:text-white transition-colors">Отмена</button>
+          <button onclick="submitRejectOrder()" class="px-4.5 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-lg transition-colors">Отклонить заявку</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 4: Add Product -->
+    <div id="modal-add-product" class="bg-darkCard border border-darkBorder rounded-2xl max-w-md w-full overflow-hidden p-6 hidden">
+      <div class="flex justify-between items-center pb-4 border-b border-darkBorder">
+        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Добавить товар в каталог</h3>
+        <button onclick="closeModal()" class="text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="add-product-form" onsubmit="submitAddProduct(event)" class="space-y-4 pt-4">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Название товара</label>
+          <input type="text" id="prod-name" required placeholder="Например: Coca-Cola 1.5L" class="w-full bg-zinc-950 border border-darkBorder rounded-lg px-3 py-2 text-zinc-200 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Категория</label>
+          <input type="text" id="prod-category" required placeholder="Например: drinks, snacks, sweets" class="w-full bg-zinc-950 border border-darkBorder rounded-lg px-3 py-2 text-zinc-200 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Поставщик</label>
+          <input type="text" id="prod-supplier" placeholder="Coca-Cola Bishkek" class="w-full bg-zinc-950 border border-darkBorder rounded-lg px-3 py-2 text-zinc-200 text-sm">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Закупочная цена</label>
+            <input type="number" step="0.01" id="prod-buy-price" required placeholder="42" class="w-full bg-zinc-950 border border-darkBorder rounded-lg px-3 py-2 text-zinc-200 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Цена продажи</label>
+            <input type="number" step="0.01" id="prod-sell-price" required placeholder="58" class="w-full bg-zinc-950 border border-darkBorder rounded-lg px-3 py-2 text-zinc-200 text-sm">
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 pt-4 border-t border-darkBorder">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 border border-darkBorder text-zinc-400 text-sm font-semibold rounded-lg hover:text-white transition-colors">Отмена</button>
+          <button type="submit" class="px-5 py-2 bg-gold hover:bg-gold-400 text-darkBg text-sm font-black rounded-lg transition-colors">Добавить товар</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Modal 5: Add Market -->
+    <div id="modal-add-market" class="bg-darkCard border border-darkBorder rounded-2xl max-w-md w-full overflow-hidden p-6 hidden">
+      <div class="flex justify-between items-center pb-4 border-b border-darkBorder">
+        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Добавить магазин (Маркет)</h3>
+        <button onclick="closeModal()" class="text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form id="add-market-form" onsubmit="submitAddMarket(event)" class="space-y-4 pt-4">
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Название магазина</label>
+          <input type="text" id="market-name" required placeholder="Например: Магазин №3 \"Советская\"" class="w-full bg-zinc-950 border border-darkBorder rounded-lg px-3 py-2 text-zinc-200 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Адрес магазина</label>
+          <input type="text" id="market-address" required placeholder="Например: ул. Абдрахманова, 105" class="w-full bg-zinc-950 border border-darkBorder rounded-lg px-3 py-2 text-zinc-200 text-sm">
+        </div>
+        <div class="flex justify-end gap-3 pt-4 border-t border-darkBorder">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 border border-darkBorder text-zinc-400 text-sm font-semibold rounded-lg hover:text-white transition-colors">Отмена</button>
+          <button type="submit" class="px-5 py-2 bg-gold hover:bg-gold-400 text-darkBg text-sm font-black rounded-lg transition-colors">Добавить магазин</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Modal 6: Delete Confirmation -->
+    <div id="modal-delete-confirm" class="bg-darkCard border border-darkBorder rounded-2xl max-w-md w-full overflow-hidden p-6 hidden">
+      <div class="flex items-center gap-3.5 text-rose-500 pb-3 border-b border-darkBorder">
+        <i class="fa-solid fa-circle-exclamation text-2xl animate-pulse"></i>
+        <h3 class="text-base font-bold uppercase tracking-wider">Подтверждение удаления</h3>
+      </div>
+      <div class="pt-4 space-y-4">
+        <p id="delete-warning-text" class="text-sm text-zinc-350 leading-relaxed"></p>
+        <div class="bg-red-500/10 border border-red-500/20 text-red-400 text-xs px-3.5 py-3 rounded-lg flex items-start gap-2.5">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+          <span>Внимание! Данная операция необратима и приведет к удалению всех связанных данных.</span>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button onclick="closeModal()" class="px-3.5 py-2 border border-darkBorder text-zinc-400 text-xs font-semibold rounded-lg hover:text-white transition-colors">Отмена</button>
+          <button id="delete-confirm-btn" class="px-5 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-lg transition-colors">Удалить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 7: KKM Integration -->
+    <div id="modal-kkm-integration" class="bg-darkCard border border-darkBorder rounded-2xl max-w-lg w-full overflow-hidden p-6 hidden">
+      <div class="flex justify-between items-center pb-4 border-b border-darkBorder">
+        <div>
+          <h3 class="text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-laptop-code text-gold"></i>
+            <span>Касса & Импорт</span>
+          </h3>
+          <p class="text-xs text-zinc-500 mt-0.5">Подключение кассового аппарата к сверке</p>
+        </div>
+        <button onclick="closeModal()" class="text-zinc-500 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="bg-zinc-950 border border-darkBorder p-1 rounded-xl flex gap-1 my-4">
+        <button onclick="switchKkmTab('api')" id="tab-kkm-api" class="flex-1 py-2 rounded-lg font-bold transition-all bg-gold text-darkBg text-xs">
+          API Синхронизация
+        </button>
+        <button onclick="switchKkmTab('file')" id="tab-kkm-file" class="flex-1 py-2 rounded-lg font-bold transition-all text-zinc-400 hover:text-white text-xs">
+          Импорт Отчета
+        </button>
+        <button onclick="switchKkmTab('settings')" id="tab-kkm-settings" class="flex-1 py-2 rounded-lg font-bold transition-all text-zinc-400 hover:text-white text-xs">
+          Настройки
+        </button>
+      </div>
+
+      <!-- KKM API Panel -->
+      <div id="kkm-panel-api" class="space-y-4">
+        <div class="bg-zinc-950 p-4 border border-darkBorder rounded-xl grid grid-cols-2 gap-y-3.5 gap-x-2 text-xs">
+          <div class="flex flex-col"><span class="text-zinc-500 mb-0.5">Провайдер ККМ</span><span class="text-zinc-300 font-bold" id="kkm-info-provider">Webkassa</span></div>
+          <div class="flex flex-col"><span class="text-zinc-500 mb-0.5">Адрес сервера</span><span class="text-zinc-300 font-semibold truncate max-w-[200px]" id="kkm-info-endpoint">https://api.webkassa.kg/v1/sales-report</span></div>
+          <div class="flex flex-col"><span class="text-zinc-500 mb-0.5">Устройство (ID)</span><span class="text-zinc-300 font-bold" id="kkm-info-device">KKM-BISHKEK-01</span></div>
+          <div class="flex flex-col"><span class="text-zinc-500 mb-0.5">Дата сверки</span><span class="text-gold font-bold" id="kkm-info-date">28.06.2026</span></div>
+        </div>
+
+        <div id="kkm-sync-logs-container" class="hidden space-y-2">
+          <div class="flex items-center gap-2 text-xs text-zinc-400">
+            <i class="fa-solid fa-circle-notch fa-spin text-gold" id="kkm-sync-spinner"></i>
+            <span id="kkm-sync-status-text">Синхронизация...</span>
+          </div>
+          <div id="kkm-log-terminal" class="bg-zinc-950 p-3 rounded-lg font-mono text-[10px] text-emerald-400 space-y-1 h-36 overflow-y-auto border border-zinc-800 select-all"></div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2" id="kkm-api-actions">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 border border-darkBorder text-zinc-400 text-xs font-semibold rounded-lg hover:text-white transition-colors">Закрыть</button>
+          <button onclick="startKkmApiSync()" id="btn-kkm-sync-run" class="px-4 py-2 bg-gold hover:bg-gold-400 text-darkBg text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5">
+            <i class="fa-solid fa-play"></i>
+            <span>Загрузить данные</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- KKM File Import Panel -->
+      <div id="kkm-panel-file" class="space-y-4 hidden">
+        <p class="text-xs text-zinc-400">Загрузите файл отчета с кассового аппарата в формате JSON или CSV.</p>
+        
+        <div id="kkm-dropzone" onclick="triggerKkmFileInput()" class="border-2 border-dashed border-zinc-850 hover:border-gold/30 rounded-xl p-8 text-center cursor-pointer hover:bg-zinc-800/10 transition-all space-y-3">
+          <div class="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center text-gold mx-auto"><i class="fa-solid fa-file-invoice text-lg"></i></div>
+          <p class="text-xs text-zinc-300 font-semibold">Перетащите сюда файл или кликните для выбора</p>
+          <p class="text-[10px] text-zinc-500">Поддерживаются файлы .json и .csv</p>
+          <input type="file" id="kkm-file-input" accept=".json,.csv" onchange="handleKkmFileSelect(event)" class="hidden">
+        </div>
+
+        <div class="bg-zinc-950 p-3 border border-darkBorder rounded-xl flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <i class="fa-solid fa-circle-info text-gold text-sm shrink-0"></i>
+            <div>
+              <span class="text-xs font-semibold text-zinc-300 block">Шаблон отчета продаж</span>
+              <span class="text-[10px] text-zinc-500 block">Скачайте пример для проверки формата</span>
+            </div>
+          </div>
+          <button onclick="downloadSampleKkmReport()" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3.5 py-2 border border-darkBorder rounded-lg font-bold flex items-center gap-1.5 transition-all">
+            <i class="fa-solid fa-download"></i>
+            <span>Скачать шаблон</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- KKM Settings Panel -->
+      <div id="kkm-panel-settings" class="space-y-4 hidden">
+        <form id="kkm-settings-form" onsubmit="submitKkmSettings(event)" class="space-y-3.5 text-xs">
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Кассовый провайдер</label>
+            <select id="kkm-setting-provider" class="bg-zinc-950 border border-darkBorder rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-gold w-full transition-colors">
+              <option value="webkassa">Webkassa (Казахстан/Кыргызстан)</option>
+              <option value="1c">1C KKM Connector</option>
+              <option value="evotor">Эвотор API</option>
+              <option value="smartkkm">Smart KKM (Кыргызстан)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">API URL Endpoint</label>
+            <input type="url" id="kkm-setting-endpoint" required placeholder="https://..." class="bg-zinc-950 border border-darkBorder rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-gold w-full transition-colors">
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Ключ Авторизации (Token)</label>
+            <input type="text" id="kkm-setting-token" required placeholder="Bearer ..." class="bg-zinc-950 border border-darkBorder rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-gold w-full transition-colors">
+          </div>
+          <div>
+            <label class="block text-zinc-400 font-semibold mb-1">Устройство (Terminal ID)</label>
+            <input type="text" id="kkm-setting-device" required placeholder="Например: KKM-BISHKEK-01" class="bg-zinc-950 border border-darkBorder rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-gold w-full transition-colors">
+          </div>
+          <div class="flex justify-end gap-3 pt-3 border-t border-darkBorder">
+            <button type="button" onclick="closeModal()" class="px-4 py-2 border border-darkBorder text-zinc-400 text-xs font-semibold rounded-lg hover:text-white transition-colors">Отмена</button>
+            <button type="submit" class="px-5 py-2 bg-gold hover:bg-gold-400 text-darkBg text-xs font-black rounded-lg transition-colors">Сохранить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
