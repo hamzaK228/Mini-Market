@@ -1,11 +1,4 @@
 {
-  "functions": {
-    "api/index.py": {
-      "runtime": "@vercel/python@4.0.0",
-      "maxDuration": 30,
-      "memory": 256
-    }
-  },
   "routes": [
     { "src": "/static/(.*)", "dest": "/static/$1" },
     { "src": "/favicon.ico", "dest": "/api/index.py" },
